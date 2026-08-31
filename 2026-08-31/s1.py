@@ -1,1 +1,1 @@
-hello hello
+s1 = "닌자"
