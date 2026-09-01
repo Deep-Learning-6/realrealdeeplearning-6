@@ -37,9 +37,7 @@ KEY_COLS = ["검사일시", "생산라인", "설비번호"]
 # 읽힌다. 이대로면 뒤에서 라인별 평균·중앙값을 구하는 연산이 전부 에러가 난다.
 # 숫자로 못 바꾸는 값을 결측으로 돌려놓고 시작한다.
 print("사전 점검 -----------------------------------")
-non_numeric_vib = raw[
-    pd.to_numeric(raw["진동"], errors="coerce").isna() & raw["진동"].notna()
-]
+non_numeric_vib = raw[pd.to_numeric(raw["진동"], errors="coerce").isna() & raw["진동"].notna()]
 print("진동 열의 비숫자 값:", len(non_numeric_vib), "행")
 print(non_numeric_vib[["검사일시", "생산라인", "설비번호", "진동"]])
 raw["진동"] = pd.to_numeric(raw["진동"], errors="coerce")
@@ -103,9 +101,7 @@ near_dup_mask = raw_dedup.duplicated(subset=KEY_COLS, keep=False)
 print("키가 겹치는 쌍:", near_dup_mask.sum() // 2)
 print(raw_dedup.loc[near_dup_mask, KEY_COLS + ["온도", "압력"]].sort_values(KEY_COLS))
 
-cleaned1 = raw_dedup.drop_duplicates(subset=KEY_COLS, keep="first").reset_index(
-    drop=True
-)
+cleaned1 = raw_dedup.drop_duplicates(subset=KEY_COLS, keep="first").reset_index(drop=True)
 print(cleaned1.shape)
 print(cleaned1["생산라인"].value_counts().sort_index())
 # [멘티에게] 값이 0.02~0.03 다르면 컴퓨터는 다른 행으로 보지만, 현실에서는 같은 설비를
@@ -134,17 +130,11 @@ print("\n문제 3 -----------------------------------")
 z_all = (cleaned1["온도"] - cleaned1["온도"].mean()) / cleaned1["온도"].std(ddof=0)
 count_all = (z_all.abs() > 2.5).sum()
 
-z_by_line = cleaned1.groupby("생산라인")["온도"].transform(
-    lambda s: (s - s.mean()) / s.std(ddof=0)
-)
+z_by_line = cleaned1.groupby("생산라인")["온도"].transform(lambda s: (s - s.mean()) / s.std(ddof=0))
 line_mask = z_by_line.abs() > 2.5
 print(count_all, line_mask.sum())
 
-print(
-    cleaned1.loc[line_mask, ["검사일시", "생산라인", "설비번호", "온도"]].sort_values(
-        "생산라인"
-    )
-)
+print(cleaned1.loc[line_mask, ["검사일시", "생산라인", "설비번호", "온도"]].sort_values("생산라인"))
 print(cleaned1.groupby("생산라인")["온도"].mean().round(4))
 # [멘티에게] 온도 73.5도는 A라인 평균(약 73.3도)이면 완전히 정상이지만, 이 값은 C라인
 # (평균 약 94.6도) 설비에서 찍힌 값이다. s1.py 문제 6은 "온도 열 전체"의 평균·표준편차로
@@ -183,9 +173,7 @@ print(mean_compare.round(4))
 
 cleaned2 = cleaned1.copy()
 temp_na_mask = cleaned2["온도"].isna()
-cleaned2.loc[temp_na_mask, "온도"] = cleaned2.loc[temp_na_mask, "생산라인"].map(
-    mean_excl
-)
+cleaned2.loc[temp_na_mask, "온도"] = cleaned2.loc[temp_na_mask, "생산라인"].map(mean_excl)
 for col in ["압력", "진동"]:
     median_vals = cleaned2.groupby("생산라인")[col].transform("median")
     cleaned2[col] = cleaned2[col].fillna(median_vals)
@@ -224,15 +212,10 @@ print("\n문제 5 -----------------------------------")
 
 
 def line_zscore(df, col):
-    return df.groupby("생산라인")[col].transform(
-        lambda s: (s - s.mean()) / s.std(ddof=0)
-    )
+    return df.groupby("생산라인")[col].transform(lambda s: (s - s.mean()) / s.std(ddof=0))
 
 
-print(
-    "C라인 압력 표준편차(처리 전):",
-    round(cleaned2.loc[cleaned2["생산라인"] == "C라인", "압력"].std(ddof=0), 4),
-)
+print("C라인 압력 표준편차(처리 전):", round(cleaned2.loc[cleaned2["생산라인"] == "C라인", "압력"].std(ddof=0), 4))
 
 cleaned3 = cleaned2.copy()
 round_num = 0
@@ -247,10 +230,7 @@ while True:
     median_vals = cleaned3.groupby("생산라인")["압력"].transform("median")
     cleaned3.loc[outlier_mask, "압력"] = median_vals[outlier_mask]
     if round_num == 1:
-        print(
-            "C라인 압력 표준편차(1차 처리 후):",
-            round(cleaned3.loc[cleaned3["생산라인"] == "C라인", "압력"].std(ddof=0), 4),
-        )
+        print("C라인 압력 표준편차(1차 처리 후):", round(cleaned3.loc[cleaned3["생산라인"] == "C라인", "압력"].std(ddof=0), 4))
 
 print(cleaned3["생산라인"].value_counts().sort_index())
 # [멘티에게] 큰 이상값 하나(13.1, 11.8, 12.5)가 C라인 압력의 표준편차를 1.25까지 부풀려서,
@@ -285,9 +265,7 @@ print(cleaned3["생산라인"].value_counts().sort_index())
 print("\n문제 6 -----------------------------------")
 mentor_norm = cleaned3.copy()
 for col in SENSORS:
-    mentor_norm[col] = (cleaned3[col] - cleaned3[col].min()) / (
-        cleaned3[col].max() - cleaned3[col].min()
-    )
+    mentor_norm[col] = (cleaned3[col] - cleaned3[col].min()) / (cleaned3[col].max() - cleaned3[col].min())
 
 mentor_norm["키"] = mentor_norm["검사일시"] + "_" + mentor_norm["생산라인"]
 mentee_norm = mentee_norm.copy()
@@ -302,11 +280,7 @@ for col in SENSORS:
 
 merged["온도차이"] = (merged["온도_멘티"] - merged["온도_멘토"]).abs()
 print("(4) 온도 차이 상위 4행")
-print(
-    merged.sort_values("온도차이", ascending=False).head(4)[
-        ["키", "온도_멘티", "온도_멘토", "온도차이"]
-    ]
-)
+print(merged.sort_values("온도차이", ascending=False).head(4)[["키", "온도_멘티", "온도_멘토", "온도차이"]])
 
 merged["생산라인"] = merged["생산라인_멘토"]
 print("(5) 라인별 정규화 온도 평균")
@@ -349,12 +323,8 @@ train_idx, val_idx, test_idx = order[:cut1], order[cut1:cut2], order[cut2:]
 print(len(train_idx), len(val_idx), len(test_idx))
 
 train_df = cleaned3.iloc[train_idx]
-full_range = pd.DataFrame(
-    {"min": cleaned3[SENSORS].min(), "max": cleaned3[SENSORS].max()}
-)
-train_range = pd.DataFrame(
-    {"min": train_df[SENSORS].min(), "max": train_df[SENSORS].max()}
-)
+full_range = pd.DataFrame({"min": cleaned3[SENSORS].min(), "max": cleaned3[SENSORS].max()})
+train_range = pd.DataFrame({"min": train_df[SENSORS].min(), "max": train_df[SENSORS].max()})
 print(full_range)
 print(train_range)
 train_range.to_csv("스케일링기준.csv", encoding="utf-8-sig")
@@ -365,27 +335,17 @@ test_df = cleaned3.iloc[test_idx]
 def apply_minmax(df, range_df):
     result = df[SENSORS].copy()
     for col in SENSORS:
-        result[col] = (df[col] - range_df.loc[col, "min"]) / (
-            range_df.loc[col, "max"] - range_df.loc[col, "min"]
-        )
+        result[col] = (df[col] - range_df.loc[col, "min"]) / (range_df.loc[col, "max"] - range_df.loc[col, "min"])
     return result
 
 
 test_scaled_full = apply_minmax(test_df, full_range)
 test_scaled_train = apply_minmax(test_df, train_range)
 
-print(
-    "(1) 0~1 밖 - 전체기준:",
-    ((test_scaled_full < 0) | (test_scaled_full > 1)).sum().sum(),
-    "/ 학습기준:",
-    ((test_scaled_train < 0) | (test_scaled_train > 1)).sum().sum(),
-)
-print(
-    "(2) 정확히 0 또는 1 - 전체기준:",
-    ((test_scaled_full == 0) | (test_scaled_full == 1)).sum().sum(),
-    "/ 학습기준:",
-    ((test_scaled_train == 0) | (test_scaled_train == 1)).sum().sum(),
-)
+print("(1) 0~1 밖 - 전체기준:", ((test_scaled_full < 0) | (test_scaled_full > 1)).sum().sum(),
+      "/ 학습기준:", ((test_scaled_train < 0) | (test_scaled_train > 1)).sum().sum())
+print("(2) 정확히 0 또는 1 - 전체기준:", ((test_scaled_full == 0) | (test_scaled_full == 1)).sum().sum(),
+      "/ 학습기준:", ((test_scaled_train == 0) | (test_scaled_train == 1)).sum().sum())
 print("(3) 학습 기준 변환값 열별 최댓값")
 print(test_scaled_train.max().round(4))
 # [멘티에게] 테스트 값이 1을 넘은 건 잘못된 게 아니라, 학습 데이터가 보지 못한 범위를
